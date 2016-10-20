@@ -37,7 +37,7 @@ sendgrid         free, bronze, silver, gold, platinum                           
 Choose a PostgreSQL service from the list and create a service instance named `rails-postgres` using a PostgreSQL service and plan: 
 
 ~~~
-$ cf create-service SERVICE PLAN rails-postgres
+$ cf create-service elephantsql turtle rails-postgres
 Creating service rails-postgres
 OK
 ~~~
@@ -45,48 +45,92 @@ OK
 Now push the application: 
 
 ~~~
-$ cf push APP-NAME --random-route
-Using manifest file manifest.yml
-
-Updating app rails-sample
-OK
-
-Creating route rails-sample-desiccative-acetylizer.cfapps.io...
-OK
-
-Binding rails-sample-desiccative-acetylizer.cfapps.io to rails-sample...
-OK
-
-Uploading rails-sample...
-Uploading app files from: rails_sample_app
-Uploading 41.1M, 6349 files
-OK
-Binding service rails-postgres to app rails-sample
-OK
-
-Starting app rails-sample
-OK
-...
-
-0 of 1 instances running, 1 starting
-0 of 1 instances running, 1 starting
-0 of 1 instances running, 1 starting
-1 of 1 instances running
-
-App started
-
-Showing health and status for app rails-sample
-OK
-
-requested state: started
-instances: 1/1
-usage: 256M x 1 instances
-urls: rails-sample-desiccative-acetylizer.cfapps.io
-
-     state     since                    cpu    memory          disk
-#0   running   2014-05-29 03:34:22 PM   0.0%   50.3M of 256M   80.2M of 1G
+$ cf push
 ~~~
 
-The application will be pushed using settings in the provided `manifest.yml` file. The `--random-route` option adds random
-words in the host to make sure the URL for the app is unique in the Cloud Foundry environment. The output of the
+The application will be pushed using settings in the provided `manifest.yml` file. The output of the
 `cf push` command shows the URL that was assigned. Using the provided URL you can browse to the running application.
+
+Then, you need to run db migration script. You can use [v3-cli-plugin](https://github.com/cloudfoundry/v3-cli-plugin).
+
+~~~
+$ cf v3-run-task rails-sample migration 'export DATABASE_URL=`echo $VCAP_SERVICES | jq -r .elephantsql[0].credentials.uri` && bundle exec rake db:migrate'
+OK
+
+Running task migration on app rails-sample...
+
+Tailing logs for app rails-sample...
+
+2016-10-20T15:31:33.79+0900 [APP/TASK/migration/0]OUT Creating container
+2016-10-20T15:31:40.68+0900 [APP/TASK/migration/0]OUT Successfully created container
+2016-10-20T15:31:45.16+0900 [APP/TASK/migration/0]OUT Migrating to CreateUsers (20100821203213)
+2016-10-20T15:31:45.16+0900 [APP/TASK/migration/0]OUT ==  CreateUsers: migrating ====================================================
+2016-10-20T15:31:45.16+0900 [APP/TASK/migration/0]OUT -- create_table(:users)
+2016-10-20T15:31:45.17+0900 [APP/TASK/migration/0]OUT    -> 0.0102s
+2016-10-20T15:31:45.17+0900 [APP/TASK/migration/0]OUT ==  CreateUsers: migrated (0.0103s) ===========================================
+2016-10-20T15:31:45.19+0900 [APP/TASK/migration/0]OUT Migrating to AddEmailUniquenessIndex (20100822012431)
+2016-10-20T15:31:45.19+0900 [APP/TASK/migration/0]OUT ==  AddEmailUniquenessIndex: migrating ========================================
+2016-10-20T15:31:45.19+0900 [APP/TASK/migration/0]OUT -- add_index(:users, :email, {:unique=>true})
+2016-10-20T15:31:45.20+0900 [APP/TASK/migration/0]OUT    -> 0.0076s
+2016-10-20T15:31:45.20+0900 [APP/TASK/migration/0]OUT ==  AddEmailUniquenessIndex: migrated (0.0077s) ===============================
+2016-10-20T15:31:45.21+0900 [APP/TASK/migration/0]OUT Migrating to AddPasswordToUsers (20100822204528)
+2016-10-20T15:31:45.21+0900 [APP/TASK/migration/0]OUT -- add_column(:users, :encrypted_password, :string)
+2016-10-20T15:31:45.21+0900 [APP/TASK/migration/0]OUT    -> 0.0012s
+2016-10-20T15:31:45.21+0900 [APP/TASK/migration/0]OUT ==  AddPasswordToUsers: migrated (0.0014s) ====================================
+2016-10-20T15:31:45.23+0900 [APP/TASK/migration/0]OUT Migrating to AddSaltToUsers (20100822233125)
+2016-10-20T15:31:45.23+0900 [APP/TASK/migration/0]OUT ==  AddSaltToUsers: migrating =================================================
+2016-10-20T15:31:45.23+0900 [APP/TASK/migration/0]OUT -- add_column(:users, :salt, :string)
+2016-10-20T15:31:45.23+0900 [APP/TASK/migration/0]OUT    -> 0.0012s
+2016-10-20T15:31:45.21+0900 [APP/TASK/migration/0]OUT ==  AddPasswordToUsers: migrating =============================================
+2016-10-20T15:31:45.23+0900 [APP/TASK/migration/0]OUT ==  AddSaltToUsers: migrated (0.0013s) ========================================
+2016-10-20T15:31:45.24+0900 [APP/TASK/migration/0]OUT Migrating to AddAdminToUsers (20100829021049)
+2016-10-20T15:31:45.24+0900 [APP/TASK/migration/0]OUT ==  AddAdminToUsers: migrating ================================================
+2016-10-20T15:31:45.24+0900 [APP/TASK/migration/0]OUT -- add_column(:users, :admin, :boolean, {:default=>false})
+2016-10-20T15:31:45.25+0900 [APP/TASK/migration/0]OUT ==  AddAdminToUsers: migrated (0.0047s) =======================================
+2016-10-20T15:31:45.26+0900 [APP/TASK/migration/0]OUT Migrating to CreateMicroposts (20100829210229)
+2016-10-20T15:31:45.26+0900 [APP/TASK/migration/0]OUT ==  CreateMicroposts: migrating ===============================================
+2016-10-20T15:31:45.26+0900 [APP/TASK/migration/0]OUT -- create_table(:microposts)
+2016-10-20T15:31:45.27+0900 [APP/TASK/migration/0]OUT    -> 0.0058s
+2016-10-20T15:31:45.27+0900 [APP/TASK/migration/0]OUT -- add_index(:microposts, [:user_id, :created_at])
+2016-10-20T15:31:45.28+0900 [APP/TASK/migration/0]OUT    -> 0.0062s
+2016-10-20T15:31:45.28+0900 [APP/TASK/migration/0]OUT ==  CreateMicroposts: migrated (0.0122s) ======================================
+2016-10-20T15:31:45.29+0900 [APP/TASK/migration/0]OUT Migrating to CreateRelationships (20100831012055)
+2016-10-20T15:31:45.29+0900 [APP/TASK/migration/0]OUT ==  CreateRelationships: migrating ============================================
+2016-10-20T15:31:45.29+0900 [APP/TASK/migration/0]OUT -- create_table(:relationships)
+2016-10-20T15:31:45.30+0900 [APP/TASK/migration/0]OUT    -> 0.0067s
+2016-10-20T15:31:45.30+0900 [APP/TASK/migration/0]OUT -- add_index(:relationships, :follower_id)
+2016-10-20T15:31:45.31+0900 [APP/TASK/migration/0]OUT    -> 0.0060s
+2016-10-20T15:31:45.31+0900 [APP/TASK/migration/0]OUT -- add_index(:relationships, :followed_id)
+2016-10-20T15:31:45.31+0900 [APP/TASK/migration/0]OUT    -> 0.0059s
+2016-10-20T15:31:45.31+0900 [APP/TASK/migration/0]OUT -- add_index(:relationships, [:follower_id, :followed_id], {:unique=>true})
+2016-10-20T15:31:45.32+0900 [APP/TASK/migration/0]OUT    -> 0.0059s
+2016-10-20T15:31:45.32+0900 [APP/TASK/migration/0]OUT ==  CreateRelationships: migrated (0.0249s) ===================================
+2016-10-20T15:31:45.25+0900 [APP/TASK/migration/0]OUT    -> 0.0046s
+2016-10-20T15:31:45.44+0900 [APP/TASK/migration/0]OUT Exit status 0
+2016-10-20T15:31:45.55+0900 [APP/TASK/migration/0]OUT Destroying container
+Task aed5684d-ddee-452b-9d9c-b416c09aa735 successfully completed.
+~~~
+
+Because the migration has been done, you 2nd `cf v3-run-task` changes nothing as follows:
+
+~~~
+$ cf v3-run-task rails-sample migration 'export DATABASE_URL=`echo $VCAP_SERVICES | jq -r .elephantsql[0].credentials.uri` && bundle exec rake db:migrate'
+OK
+
+Running task migration on app rails-sample...
+
+Tailing logs for app rails-sample...
+
+2016-10-20T15:31:54.49+0900 [APP/TASK/migration/0]OUT Creating container
+2016-10-20T15:32:01.63+0900 [APP/TASK/migration/0]OUT Successfully created container
+2016-10-20T15:32:05.17+0900 [APP/TASK/migration/0]OUT Migrating to CreateUsers (20100821203213)
+2016-10-20T15:32:05.17+0900 [APP/TASK/migration/0]OUT Migrating to AddEmailUniquenessIndex (20100822012431)
+2016-10-20T15:32:05.17+0900 [APP/TASK/migration/0]OUT Migrating to AddPasswordToUsers (20100822204528)
+2016-10-20T15:32:05.17+0900 [APP/TASK/migration/0]OUT Migrating to AddSaltToUsers (20100822233125)
+2016-10-20T15:32:05.17+0900 [APP/TASK/migration/0]OUT Migrating to AddAdminToUsers (20100829021049)
+2016-10-20T15:32:05.17+0900 [APP/TASK/migration/0]OUT Migrating to CreateMicroposts (20100829210229)
+2016-10-20T15:32:05.17+0900 [APP/TASK/migration/0]OUT Migrating to CreateRelationships (20100831012055)
+2016-10-20T15:32:05.23+0900 [APP/TASK/migration/0]OUT Exit status 0
+2016-10-20T15:32:05.33+0900 [APP/TASK/migration/0]OUT Destroying container
+Task 39cece9f-855d-4f34-aea2-5174343b0fd6 successfully completed.
+~~~

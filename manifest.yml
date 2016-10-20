@@ -2,9 +2,10 @@
 applications:
 - name: rails-sample
   random-route: true
+  buildpack: ruby_buildpack
   memory: 256M
   instances: 1
   path: .
-  command: bundle exec rake db:migrate && bundle exec rails s -p $PORT
+  command: bundle exec rails s -p $PORT
   services:
     - rails-postgres
